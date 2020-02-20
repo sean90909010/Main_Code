@@ -1,0 +1,55 @@
+	public WritableImage bilinearResizeCustom2(WritableImage image, float scale) {
+		int oldHeight = (int) image.getHeight(), oldWidth = (int) image.getWidth(),
+				newHeight = (int) (oldHeight * scale / 100), newWidth = (int) (oldWidth * scale / 100);
+
+		PixelReader image_reader = image.getPixelReader();
+		if (newWidth > 0 && newHeight > 0) {
+			System.out.println(oldHeight + " " + oldWidth);
+			System.out.println(newHeight + " " + newWidth);
+			WritableImage image2 = new WritableImage(newWidth, newHeight);
+			PixelWriter image_writer = image2.getPixelWriter();
+
+			for (int x = 0; x < newWidth; x++) {
+				for (int y = 0; y < newHeight; y++) {
+                
+					float gx = ((float) x) / newWidth * oldWidth;
+					float gy = ((float) y) / newHeight * oldHeight;
+					int gxi = (int) gx;
+					int gyi = (int) gy;
+
+					Color[] colorArray = new Color[4];
+					double[] cred = new double[4];
+					double[] cblue = new double[4];
+					double[] cgreen = new double[4];
+                    
+					if (gyi + 1 < oldHeight && gxi + 1 < oldWidth) {
+						colorArray[0] = image_reader.getColor(gxi, gyi);
+						colorArray[1] = image_reader.getColor(gxi + 1, gyi);
+						colorArray[2] = image_reader.getColor(gxi, gyi + 1);
+						colorArray[3] = image_reader.getColor(gxi + 1, gyi + 1);
+						for (int z = 0; z < 4; z++) {
+							cred[z] = colorArray[z].getRed() * colorArray[z].getRed();
+							cblue[z] = colorArray[z].getBlue() * colorArray[z].getBlue();
+							cgreen[z] = colorArray[z].getGreen() * colorArray[z].getGreen();
+						}
+						double x1r = cred[0] + (cred[1] - cred[0]) * (gx-gxi);
+						double x1g = cgreen[0] + (cgreen[1] - cgreen[0]) * (gx-gxi);
+						double x1b = cblue[0] + (cblue[1] - cblue[0]) * (gx-gxi);
+                        
+						double x2r = cred[2] + (cred[3] - cred[2]) * (gx-gxi);
+						double x2g = cgreen[2] + (cgreen[3] - cgreen[2]) * (gx-gxi);
+						double x2b = cblue[2] + (cblue[3] - cblue[2]) * (gx-gxi);
+                        
+						double realr = x1r + (x2r - x1r) * (gy-gyi);
+						double realg = x1g + (x2g - x1g) * (gy-gyi);
+						double realb = x1b + (x2b - x1b) * (gy-gyi);
+                        
+						image_writer.setColor(x, y, Color.color(Math.sqrt(realr), Math.sqrt(realg), Math.sqrt(realb)));
+					}
+				}
+			}
+			return image2;
+		} else {
+			return image;
+		}
+	}
